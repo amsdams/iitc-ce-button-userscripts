@@ -408,6 +408,31 @@
     }
   };
 
+  function cacheVisiblePortals() {
+    const portals = window.portals || {};
+    let added = 0;
+    for (const guid in portals) {
+      if (self.cache[guid]) continue;
+      
+      const p = portals[guid];
+      const data = p.options && p.options.data;
+      if (data && data.capturedBy) {
+        self.cache[guid] = {
+          owner: data.capturedBy,
+          title: data.title,
+          team:  data.team,
+          level: data.level,
+          latlng: [data.latE6 / 1e6, data.lngE6 / 1e6],
+          time:  Date.now()
+        };
+        added++;
+      }
+    }
+    if (added > 0) {
+      saveCache();
+    }
+  }
+
   function updatePortalInCache(guid, details) {
     if (!guid || !details || !details.owner) return;
     self.cache[guid] = {
@@ -743,6 +768,7 @@
   // ─── Auto-rescan on map data refresh ─────────────────────────────────────
   function hookEvents() {
     window.addHook('mapDataRefreshEnd', function () {
+      cacheVisiblePortals();
       if (self.targetAgent) runScan();
       if (self.isScanning) queueVisiblePortals();
     });
