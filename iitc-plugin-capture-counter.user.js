@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         IITC Plugin: Capture Counter
 // @namespace    https://iitc.app/plugins/capture-counter
-// @version      1.2.1
-// @description  Tracks portal captures from comms (getPlexts) and shows a leaderboard table sorted by capture count. Click an agent to see their first and last captured portal.
+// @version      1.3.0
+// @description  Tracks portal captures from comms. Shows ENL/RES summary, sortable leaderboard, and per-agent first/last portal detail.
 // @author       IITC Community
 // @match        https://intel.ingress.com/*
 // @grant        none
@@ -64,7 +64,7 @@
         #capture-counter-dialog .cc-toolbar {
           display: flex;
           gap: 6px;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
           align-items: center;
         }
         #capture-counter-dialog .cc-toolbar button {
@@ -78,6 +78,26 @@
           margin-left: auto;
           white-space: nowrap;
         }
+
+        /* ── summary bar ── */
+        #cc-summary {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 6px;
+          font-size: 11px;
+        }
+        #cc-summary .cc-sum-box {
+          flex: 1;
+          padding: 3px 5px;
+          border-radius: 3px;
+          text-align: center;
+          font-weight: bold;
+          line-height: 1.4;
+        }
+        #cc-summary .cc-sum-enl { background: #0d2b0d; color: #03dc03; border: 1px solid #1a5c1a; }
+        #cc-summary .cc-sum-res { background: #0a1a2b; color: #00c5ff; border: 1px solid #0a3d5c; }
+        #cc-summary .cc-sum-mac { background: #2b1a0a; color: #f5a623; border: 1px solid #5c3a0a; }
+        #cc-summary .cc-sum-label { font-size: 9px; font-weight: normal; opacity: 0.7; display: block; }
 
         /* ── table ── */
         #capture-counter-table {
@@ -95,7 +115,13 @@
           top: 0;
           background: #1b1b1b;
           font-size: 11px;
+          user-select: none;
         }
+        #capture-counter-table th.sortable {
+          cursor: pointer;
+        }
+        #capture-counter-table th.sortable:hover { color: #fff; }
+        #capture-counter-table th.sort-active { color: #fff; }
         #capture-counter-table td {
           padding: 3px 4px;
           border-bottom: 1px solid #2a2a2a;
@@ -131,7 +157,7 @@
 
         /* ── scroll wrap ── */
         .cc-scroll-wrap {
-          max-height: 340px;
+          max-height: 300px;
           overflow-y: auto;
           overflow-x: hidden;
         }
@@ -222,22 +248,52 @@
     // ── Dialog UI ──────────────────────────────────────────────────────────────
     let dialogRef = null
     let selectedAgent = null
+    let sortMode = 'count' // 'count' | 'activity'
+
+    function teamCaptures () {
+      const t = { ENL: 0, RES: 0, MAC: 0 }
+      Object.values(captures).forEach(function (info) {
+        const tc = teamClass(info.team)
+        if (tc && t[tc] !== undefined) t[tc] += info.count
+      })
+      return t
+    }
+
+    function buildSummary () {
+      const t = teamCaptures()
+      const parts = []
+      if (t.ENL > 0) parts.push(`<div class="cc-sum-box cc-sum-enl">${t.ENL}<span class="cc-sum-label">Enlightened</span></div>`)
+      if (t.RES > 0) parts.push(`<div class="cc-sum-box cc-sum-res">${t.RES}<span class="cc-sum-label">Resistance</span></div>`)
+      if (t.MAC > 0) parts.push(`<div class="cc-sum-box cc-sum-mac">${t.MAC}<span class="cc-sum-label">Machina</span></div>`)
+      if (parts.length === 0) return ''
+      return `<div id="cc-summary">${parts.join('')}</div>`
+    }
 
     function buildTable () {
       const entries = Object.entries(captures)
           .map(([name, info]) => ({ name, ...info }))
-          .sort((a, b) => b.count - a.count)
 
       if (entries.length === 0) {
         return '<p style="color:#888;text-align:center;padding:16px 0;font-size:12px">No captures recorded yet.<br>Loads when comms update.</p>'
       }
+
+      if (sortMode === 'activity') {
+        entries.sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0))
+      } else {
+        entries.sort((a, b) => b.count - a.count || (b.lastTs || 0) - (a.lastTs || 0))
+      }
+
+      const countArrow  = sortMode === 'count'    ? ' ▼' : ''
+      const actArrow    = sortMode === 'activity' ? ' ▼' : ''
+      const countActive = sortMode === 'count'    ? ' sort-active' : ''
+      const actActive   = sortMode === 'activity' ? ' sort-active' : ''
 
       const rows = entries.map((e, i) => {
         const tc = teamClass(e.team)
         const isSelected = selectedAgent === e.name
         return `<tr class="${isSelected ? 'cc-selected' : ''}" data-agent="${escapeHtml(e.name)}">
           <td class="rank">${i + 1}</td>
-          <td><span class="agent-name agent-${tc}" title="Click for last capture: ${escapeHtml(e.name)}">${escapeHtml(e.name)}</span></td>
+          <td><span class="agent-name agent-${tc}" title="${escapeHtml(e.name)}">${escapeHtml(e.name)}</span></td>
           <td class="count">${e.count}</td>
         </tr>`
       }).join('')
@@ -253,8 +309,8 @@
             <thead>
               <tr>
                 <th class="rank">#</th>
-                <th>Agent</th>
-                <th class="count">↓</th>
+                <th class="sortable${actActive}" data-sort="activity" title="Sort by latest activity">Agent${actArrow}</th>
+                <th class="count sortable${countActive}" data-sort="count" title="Sort by capture count">↓${countArrow}</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -316,6 +372,7 @@
             <button id="cc-btn-reset">Reset</button>
             <span class="cc-count">${agentCount} agents · ${totalCaptures()} caps</span>
           </div>
+          <div id="cc-summary-wrap">${buildSummary()}</div>
           <div id="cc-table-wrap">${buildTable()}</div>
           <div id="cc-detail-wrap">${buildDetailPanel(selectedAgent)}</div>
           <div id="capture-counter-status">Listening for comms…</div>
@@ -337,6 +394,17 @@
       if (!dialog) return
 
       dialog.addEventListener('click', function (e) {
+        // Sort header click
+        const sortTh = e.target.closest('th[data-sort]')
+        if (sortTh) {
+          const mode = sortTh.getAttribute('data-sort')
+          if (mode && mode !== sortMode) {
+            sortMode = mode
+            refreshDialog()
+          }
+          return
+        }
+
         // Reset button
         if (e.target.id === 'cc-btn-reset') {
           if (confirm('Reset all capture data?')) {
@@ -384,6 +452,9 @@
     }
 
     function refreshDialog () {
+      const summaryWrap = document.getElementById('cc-summary-wrap')
+      if (summaryWrap) summaryWrap.innerHTML = buildSummary()
+
       const tableWrap = document.getElementById('cc-table-wrap')
       if (!tableWrap) return
       tableWrap.innerHTML = buildTable()
@@ -505,7 +576,7 @@
         action: openDialog
       })
 
-      console.log('[Capture Counter] Plugin v1.2 loaded.')
+      console.log('[Capture Counter] Plugin v1.3 loaded.')
     }
 
     if (window.iitcLoaded) {
