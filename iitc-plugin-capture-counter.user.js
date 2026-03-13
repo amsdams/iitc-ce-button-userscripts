@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         IITC Plugin: Capture Counter
 // @namespace    https://iitc.app/plugins/capture-counter
-// @version      1.1.0
-// @description  Tracks portal captures from comms (getPlexts) and shows a leaderboard table sorted by capture count. Click an agent to see their last captured portal.
+// @version      1.2.0
+// @description  Tracks portal captures from comms (getPlexts) and shows a leaderboard table sorted by capture count. Click an agent to see their first and last captured portal.
 // @author       IITC Community
 // @match        https://intel.ingress.com/*
 // @grant        none
@@ -24,10 +24,14 @@
      * captures[agentName] = {
      *   count: number,
      *   team: string,
-     *   lastPortal: string,
+     *   firstPortal: string|null,
+     *   firstPortalGuid: string|null,
+     *   firstPortalLatLng: {lat,lng}|null,
+     *   firstTs: number|null,
+     *   lastPortal: string|null,
      *   lastPortalGuid: string|null,
      *   lastPortalLatLng: {lat,lng}|null,
-     *   lastTs: number
+     *   lastTs: number|null
      * }
      */
     let captures = {}
@@ -259,32 +263,42 @@
       `
     }
 
+    function portalLinkHtml (portalName, portalGuid, portalLatLng) {
+      if (!portalName) return '<span style="color:#555">—</span>'
+      if (portalLatLng && portalLatLng.lat != null) {
+        const { lat, lng } = portalLatLng
+        const guid = portalGuid || ''
+        return `<a href="#" class="cc-portal-link"
+            data-lat="${lat}" data-lng="${lng}" data-guid="${escapeHtml(guid)}"
+            title="Pan map to portal">${escapeHtml(portalName)} ↗</a>`
+      }
+      return escapeHtml(portalName)
+    }
+
     function buildDetailPanel (agentName) {
       const info = captures[agentName]
       if (!info) return '<div id="cc-agent-detail"></div>'
 
       const tc = teamClass(info.team)
-      const portalName = info.lastPortal || '—'
-      const hasLoc = info.lastPortalLatLng && info.lastPortalLatLng.lat != null
 
-      let portalLink
-      if (hasLoc) {
-        const { lat, lng } = info.lastPortalLatLng
-        const guid = info.lastPortalGuid || ''
-        portalLink = `<a href="#" class="cc-portal-link"
-            data-lat="${lat}" data-lng="${lng}" data-guid="${escapeHtml(guid)}"
-            title="Pan map to portal">${escapeHtml(portalName)} ↗</a>`
-      } else {
-        portalLink = escapeHtml(portalName)
-      }
+      const firstLink = portalLinkHtml(info.firstPortal, info.firstPortalGuid, info.firstPortalLatLng)
+      const lastLink  = portalLinkHtml(info.lastPortal,  info.lastPortalGuid,  info.lastPortalLatLng)
+
+      // Only show "last" row when it differs from first (i.e. more than 1 capture)
+      const showLast = info.count > 1 && info.lastPortal !== info.firstPortal
 
       return `
         <div id="cc-agent-detail" class="visible">
           <span class="cc-close" id="cc-detail-close" title="Close">✕</span>
           <div class="cc-detail-name agent-${tc}">${escapeHtml(agentName)}</div>
-          <div class="cc-detail-label">Last capture</div>
-          <div class="cc-detail-portal">${portalLink}</div>
+          <div class="cc-detail-label">First capture</div>
+          <div class="cc-detail-portal">${firstLink}</div>
+          <div class="cc-detail-time">${fmtTime(info.firstTs)}</div>
+          ${showLast ? `
+          <div class="cc-detail-label" style="margin-top:4px">Last capture</div>
+          <div class="cc-detail-portal">${lastLink}</div>
           <div class="cc-detail-time">${fmtTime(info.lastTs)}</div>
+          ` : ''}
         </div>
       `
     }
@@ -443,11 +457,23 @@
         const ts = entry[1] || Date.now()
 
         if (!captures[agentName]) {
-          captures[agentName] = { count: 0, team, lastPortal: null, lastPortalGuid: null, lastPortalLatLng: null, lastTs: null }
+          captures[agentName] = {
+            count: 0, team,
+            firstPortal: null, firstPortalGuid: null, firstPortalLatLng: null, firstTs: null,
+            lastPortal: null,  lastPortalGuid: null,  lastPortalLatLng: null,  lastTs: null
+          }
         }
         captures[agentName].count++
         captures[agentName].team = team
         if (lastPortal) {
+          // First capture ever seen for this agent
+          if (!captures[agentName].firstPortal) {
+            captures[agentName].firstPortal = lastPortal
+            captures[agentName].firstPortalGuid = lastPortalGuid
+            captures[agentName].firstPortalLatLng = lastPortalLatLng
+            captures[agentName].firstTs = ts
+          }
+          // Always update last
           captures[agentName].lastPortal = lastPortal
           captures[agentName].lastPortalGuid = lastPortalGuid
           captures[agentName].lastPortalLatLng = lastPortalLatLng
@@ -476,7 +502,7 @@
         action: openDialog
       })
 
-      console.log('[Capture Counter] Plugin v1.1 loaded.')
+      console.log('[Capture Counter] Plugin v1.2 loaded.')
     }
 
     if (window.iitcLoaded) {
