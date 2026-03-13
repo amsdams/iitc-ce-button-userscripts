@@ -1,0 +1,10 @@
+# IDEs
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary and local files
+tmp/
