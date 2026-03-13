@@ -12,27 +12,27 @@
 ;(function () {
   'use strict'
 
-  function wrapper (plugin_info) {
+  function wrapper(plugin_info) {
     if (typeof window.plugin !== 'function') window.plugin = function () {}
 
     // ── State ──────────────────────────────────────────────────────────────────
-    const STORAGE_KEY    = 'iitc-capture-counter'
+    const STORAGE_KEY = 'iitc-capture-counter'
     const SEEN_GUIDS_KEY = 'iitc-capture-counter-guids'
-    const SEEN_GUIDS_CAP = 20000   // applied both in-memory and on persist
+    const SEEN_GUIDS_CAP = 20000 // applied both in-memory and on persist
 
-    let captures     = {}
-    let seenGuids    = new Set()
-    let totalCount   = 0           // running total — avoids full traversal on every refresh (#13)
+    let captures = {}
+    let seenGuids = new Set()
+    let totalCount = 0 // running total — avoids full traversal on every refresh (#13)
 
     // Rebuild running total from loaded data (called once after loadData)
-    function rebuildTotal () {
+    function rebuildTotal() {
       totalCount = Object.values(captures).reduce((s, v) => s + v.count, 0)
     }
 
     // ── Persistence ────────────────────────────────────────────────────────────
     // Debounced save — coalesces rapid writes from batch scroll (#10)
     let saveTimer = null
-    function saveData () {
+    function saveData() {
       if (saveTimer) return
       saveTimer = setTimeout(function () {
         saveTimer = null
@@ -47,14 +47,24 @@
       }, 500)
     }
 
-    function loadData () {
-      try { const r = localStorage.getItem(STORAGE_KEY);    if (r) captures  = JSON.parse(r) } catch (e) { captures = {} }
-      try { const r = localStorage.getItem(SEEN_GUIDS_KEY); if (r) seenGuids = new Set(JSON.parse(r)) } catch (e) { seenGuids = new Set() }
+    function loadData() {
+      try {
+        const r = localStorage.getItem(STORAGE_KEY)
+        if (r) captures = JSON.parse(r)
+      } catch (e) {
+        captures = {}
+      }
+      try {
+        const r = localStorage.getItem(SEEN_GUIDS_KEY)
+        if (r) seenGuids = new Set(JSON.parse(r))
+      } catch (e) {
+        seenGuids = new Set()
+      }
       rebuildTotal()
     }
 
     // ── CSS ────────────────────────────────────────────────────────────────────
-    function addCSS () {
+    function addCSS() {
       const style = document.createElement('style')
       // All rules scoped under #capture-counter-dialog or prefixed cc- to avoid
       // collisions with other IITC plugins (#15). Agent colour classes renamed to
@@ -177,55 +187,63 @@
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     // Fix #12: escape double-quotes for use inside HTML attribute values
-    function escapeHtml (s) {
+    function escapeHtml(s) {
       return String(s)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
     }
 
-    function teamClass (team) {
-      return team === 'ENLIGHTENED' ? 'ENL'
-          : team === 'RESISTANCE' ? 'RES'
-              : team === 'MACHINA'    ? 'MAC'
-                  : ''
+    function teamClass(team) {
+      return team === 'ENLIGHTENED'
+        ? 'ENL'
+        : team === 'RESISTANCE'
+          ? 'RES'
+          : team === 'MACHINA'
+            ? 'MAC'
+            : ''
     }
 
-    function fmtTime (ts) {
+    function fmtTime(ts) {
       if (!ts) return ''
       const d = new Date(ts)
-      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
-          ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      return (
+        d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
+        ' ' +
+        d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      )
     }
 
-    function portalLinkHtml (portalName, portalGuid, portalLatLng) {
+    function portalLinkHtml(portalName, portalGuid, portalLatLng) {
       if (!portalName) return '<span style="color:#444">—</span>'
       if (portalLatLng && portalLatLng.lat != null) {
         const { lat, lng } = portalLatLng
-        const guid    = escapeHtml(portalGuid || '')
+        const guid = escapeHtml(portalGuid || '')
         const visited = visitedPortals.has(portalGuid || portalName) ? ' cc-portal-visited' : ''
-        return `<a href="#" class="cc-portal-link${visited}"` +
-            ` data-lat="${lat}" data-lng="${lng}"` +
-            ` data-guid="${guid}" data-name="${escapeHtml(portalName)}"` +
-            ` title="Pan map to ${escapeHtml(portalName)}">${escapeHtml(portalName)} ↗</a>`
+        return (
+          `<a href="#" class="cc-portal-link${visited}"` +
+          ` data-lat="${lat}" data-lng="${lng}"` +
+          ` data-guid="${guid}" data-name="${escapeHtml(portalName)}"` +
+          ` title="Pan map to ${escapeHtml(portalName)}">${escapeHtml(portalName)} ↗</a>`
+        )
       }
       return escapeHtml(portalName)
     }
 
     // ── Dialog state ───────────────────────────────────────────────────────────
-    let dialogRef      = null
-    let selectedAgent  = null
-    let sortMode       = 'count'
-    let filterQuery    = ''                        // always stored lowercase (#2)
-    let teamFilters    = new Set(['ENL', 'RES', 'MAC'])
-    let flashAgents    = new Set()
-    let flashTimer     = null                      // debounce flash clear (#7)
+    let dialogRef = null
+    let selectedAgent = null
+    let sortMode = 'count'
+    let filterQuery = '' // always stored lowercase (#2)
+    let teamFilters = new Set(['ENL', 'RES', 'MAC'])
+    let flashAgents = new Set()
+    let flashTimer = null // debounce flash clear (#7)
     let visitedPortals = new Set()
-    let pollerRef      = null                      // active portal-load poller (#9)
+    let pollerRef = null // active portal-load poller (#9)
 
     // ── Build UI ───────────────────────────────────────────────────────────────
-    function buildSummary () {
+    function buildSummary() {
       const t = { ENL: 0, RES: 0, MAC: 0 }
       Object.values(captures).forEach(function (info) {
         const tc = teamClass(info.team)
@@ -235,10 +253,10 @@
       ;['ENL', 'RES', 'MAC'].forEach(function (tc) {
         if (t[tc] <= 0) return
         const color = tc === 'ENL' ? 'enl' : tc === 'RES' ? 'res' : 'mac'
-        const dim   = teamFilters.has(tc) ? '' : ' cc-dim'
+        const dim = teamFilters.has(tc) ? '' : ' cc-dim'
         const label = tc === 'ENL' ? 'Enlightened' : tc === 'RES' ? 'Resistance' : 'Machina'
         parts.push(
-            `<div class="cc-sum-box cc-sum-${color}${dim}" data-team="${tc}">` +
+          `<div class="cc-sum-box cc-sum-${color}${dim}" data-team="${tc}">` +
             `${t[tc]}<span class="cc-sum-label">${label}</span></div>`
         )
       })
@@ -246,15 +264,17 @@
       return `<div id="cc-summary">${parts.join('')}</div>`
     }
 
-    function buildSearchBar () {
-      return `<div id="cc-search-wrap">` +
-          `<input id="cc-search" type="text" placeholder="Search agents…"` +
-          ` value="${escapeHtml(filterQuery)}" autocomplete="off" spellcheck="false">` +
-          `<span id="cc-search-clear" class="${filterQuery ? 'visible' : ''}" title="Clear search">✕</span>` +
-          `</div>`
+    function buildSearchBar() {
+      return (
+        `<div id="cc-search-wrap">` +
+        `<input id="cc-search" type="text" placeholder="Search agents…"` +
+        ` value="${escapeHtml(filterQuery)}" autocomplete="off" spellcheck="false">` +
+        `<span id="cc-search-clear" class="${filterQuery ? 'visible' : ''}" title="Clear search">✕</span>` +
+        `</div>`
+      )
     }
 
-    function buildTable () {
+    function buildTable() {
       // Build entries, computing teamClass once per entry (#11)
       let entries = Object.entries(captures).map(function ([name, info]) {
         return { name, tc: teamClass(info.team), count: info.count, lastTs: info.lastTs || 0 }
@@ -268,7 +288,7 @@
 
       // Search filter — filterQuery already lowercase (#2)
       if (filterQuery) {
-        entries = entries.filter(e => e.name.toLowerCase().includes(filterQuery))
+        entries = entries.filter((e) => e.name.toLowerCase().includes(filterQuery))
       }
 
       // Sort
@@ -278,79 +298,95 @@
         entries.sort((a, b) => b.count - a.count || b.lastTs - a.lastTs)
       }
 
-      const countActive = sortMode === 'count'    ? ' cc-sort-active' : ''
-      const actActive   = sortMode === 'activity' ? ' cc-sort-active' : ''
-      const countArrow  = sortMode === 'count'    ? ' ▼' : ''
-      const actArrow    = sortMode === 'activity' ? ' ▼' : ''
+      const countActive = sortMode === 'count' ? ' cc-sort-active' : ''
+      const actActive = sortMode === 'activity' ? ' cc-sort-active' : ''
+      const countArrow = sortMode === 'count' ? ' ▼' : ''
+      const actArrow = sortMode === 'activity' ? ' ▼' : ''
 
       let tbody
       if (entries.length === 0) {
         const msg = filterQuery ? 'No matching agents' : 'No captures yet'
         tbody = `<tr class="cc-no-results"><td colspan="3">${msg}</td></tr>`
       } else {
-        tbody = entries.map(function (e, i) {
-          let cls = ''
-          if (selectedAgent === e.name) cls += ' cc-selected'
-          if (flashAgents.has(e.name))  cls += ' cc-new'
-          return `<tr class="${cls.trim()}" data-agent="${escapeHtml(e.name)}">` +
+        tbody = entries
+          .map(function (e, i) {
+            let cls = ''
+            if (selectedAgent === e.name) cls += ' cc-selected'
+            if (flashAgents.has(e.name)) cls += ' cc-new'
+            return (
+              `<tr class="${cls.trim()}" data-agent="${escapeHtml(e.name)}">` +
               `<td class="cc-rank">${i + 1}</td>` +
               `<td><span class="cc-agent-name cc-${e.tc.toLowerCase()}" title="${escapeHtml(e.name)}">${escapeHtml(e.name)}</span></td>` +
               `<td class="cc-count-cell">${e.count}</td>` +
               `</tr>`
-        }).join('')
+            )
+          })
+          .join('')
       }
 
-      return `<div class="cc-scroll-wrap"><table id="capture-counter-table">` +
-          `<colgroup><col class="col-rank"><col class="col-agent"><col class="col-count"></colgroup>` +
-          `<thead><tr>` +
-          `<th class="cc-rank">#</th>` +
-          `<th class="cc-sortable${actActive}" data-sort="activity" title="Sort by latest activity">Agent${actArrow}</th>` +
-          `<th class="cc-count-cell cc-sortable${countActive}" data-sort="count" title="Sort by capture count">↓${countArrow}</th>` +
-          `</tr></thead>` +
-          `<tbody>${tbody}</tbody>` +
-          `</table></div>`
+      return (
+        `<div class="cc-scroll-wrap"><table id="capture-counter-table">` +
+        `<colgroup><col class="col-rank"><col class="col-agent"><col class="col-count"></colgroup>` +
+        `<thead><tr>` +
+        `<th class="cc-rank">#</th>` +
+        `<th class="cc-sortable${actActive}" data-sort="activity" title="Sort by latest activity">Agent${actArrow}</th>` +
+        `<th class="cc-count-cell cc-sortable${countActive}" data-sort="count" title="Sort by capture count">↓${countArrow}</th>` +
+        `</tr></thead>` +
+        `<tbody>${tbody}</tbody>` +
+        `</table></div>`
+      )
     }
 
-    function buildDetailPanel (agentName) {
+    function buildDetailPanel(agentName) {
       const info = agentName ? captures[agentName] : null
       if (!info) return '<div id="cc-agent-detail"></div>'
 
-      const tc        = teamClass(info.team)
-      const firstLink = portalLinkHtml(info.firstPortal, info.firstPortalGuid, info.firstPortalLatLng)
-      const lastLink  = portalLinkHtml(info.lastPortal,  info.lastPortalGuid,  info.lastPortalLatLng)
-      const showLast  = info.count > 1 && (info.lastTs !== info.firstTs || info.lastPortal !== info.firstPortal)
+      const tc = teamClass(info.team)
+      const firstLink = portalLinkHtml(
+        info.firstPortal,
+        info.firstPortalGuid,
+        info.firstPortalLatLng
+      )
+      const lastLink = portalLinkHtml(info.lastPortal, info.lastPortalGuid, info.lastPortalLatLng)
+      const showLast =
+        info.count > 1 && (info.lastTs !== info.firstTs || info.lastPortal !== info.firstPortal)
 
-      return `<div id="cc-agent-detail" class="visible">` +
-          `<span class="cc-close" id="cc-detail-close" title="Close">✕</span>` +
-          `<div class="cc-detail-name cc-${tc.toLowerCase()}">${escapeHtml(agentName)}` +
-          ` <span style="color:#555;font-weight:normal;font-size:10px">(${info.count} cap${info.count !== 1 ? 's' : ''})</span></div>` +
-          `<div class="cc-detail-label">First capture</div>` +
-          `<div class="cc-detail-portal">${firstLink}</div>` +
-          `<div class="cc-detail-time">${fmtTime(info.firstTs)}</div>` +
-          (showLast
-              ? `<div class="cc-detail-label">Last capture</div>` +
-              `<div class="cc-detail-portal">${lastLink}</div>` +
-              `<div class="cc-detail-time">${fmtTime(info.lastTs)}</div>`
-              : '') +
-          `</div>`
+      return (
+        `<div id="cc-agent-detail" class="visible">` +
+        `<span class="cc-close" id="cc-detail-close" title="Close">✕</span>` +
+        `<div class="cc-detail-name cc-${tc.toLowerCase()}">${escapeHtml(agentName)}` +
+        ` <span style="color:#555;font-weight:normal;font-size:10px">(${info.count} cap${info.count !== 1 ? 's' : ''})</span></div>` +
+        `<div class="cc-detail-label">First capture</div>` +
+        `<div class="cc-detail-portal">${firstLink}</div>` +
+        `<div class="cc-detail-time">${fmtTime(info.firstTs)}</div>` +
+        (showLast
+          ? `<div class="cc-detail-label">Last capture</div>` +
+            `<div class="cc-detail-portal">${lastLink}</div>` +
+            `<div class="cc-detail-time">${fmtTime(info.lastTs)}</div>`
+          : '') +
+        `</div>`
+      )
     }
 
     // ── Open / refresh dialog ──────────────────────────────────────────────────
-    function openDialog () {
-      if (dialogRef) { refreshDialog(); return }
+    function openDialog() {
+      if (dialogRef) {
+        refreshDialog()
+        return
+      }
 
       const html =
-          `<div id="capture-counter-dialog">` +
-          `<div class="cc-toolbar">` +
-          `<button id="cc-btn-reset">Reset</button>` +
-          `<span class="cc-count">${Object.keys(captures).length} agents · ${totalCount} caps</span>` +
-          `</div>` +
-          `<div id="cc-summary-wrap">${buildSummary()}</div>` +
-          `<div id="cc-search-outer">${buildSearchBar()}</div>` +
-          `<div id="cc-table-wrap">${buildTable()}</div>` +
-          `<div id="cc-detail-wrap">${buildDetailPanel(selectedAgent)}</div>` +
-          `<div id="capture-counter-status">Listening for comms…</div>` +
-          `</div>`
+        `<div id="capture-counter-dialog">` +
+        `<div class="cc-toolbar">` +
+        `<button id="cc-btn-reset">Reset</button>` +
+        `<span class="cc-count">${Object.keys(captures).length} agents · ${totalCount} caps</span>` +
+        `</div>` +
+        `<div id="cc-summary-wrap">${buildSummary()}</div>` +
+        `<div id="cc-search-outer">${buildSearchBar()}</div>` +
+        `<div id="cc-table-wrap">${buildTable()}</div>` +
+        `<div id="cc-detail-wrap">${buildDetailPanel(selectedAgent)}</div>` +
+        `<div id="capture-counter-status">Listening for comms…</div>` +
+        `</div>`
 
       dialogRef = window.dialog({
         title: '📡 Capture Counter',
@@ -358,7 +394,10 @@
         id: 'capture-counter',
         closeCallback: function () {
           // Cancel any pending portal poller when dialog closes (#9)
-          if (pollerRef) { clearInterval(pollerRef); pollerRef = null }
+          if (pollerRef) {
+            clearInterval(pollerRef)
+            pollerRef = null
+          }
           dialogRef = null
         }
       })
@@ -366,14 +405,14 @@
       bindDialogEvents()
     }
 
-    function bindDialogEvents () {
+    function bindDialogEvents() {
       const dialog = document.getElementById('capture-counter-dialog')
       if (!dialog) return
 
       // Live search — only rebuilds table, not whole dialog
       dialog.addEventListener('input', function (e) {
         if (e.target.id !== 'cc-search') return
-        filterQuery = e.target.value.toLowerCase()   // store lowercase once (#2)
+        filterQuery = e.target.value.toLowerCase() // store lowercase once (#2)
         const clearBtn = document.getElementById('cc-search-clear')
         if (clearBtn) clearBtn.classList.toggle('visible', filterQuery.length > 0)
         const tw = document.getElementById('cc-table-wrap')
@@ -412,24 +451,33 @@
         const sortTh = e.target.closest('th[data-sort]')
         if (sortTh) {
           const mode = sortTh.getAttribute('data-sort')
-          if (mode && mode !== sortMode) { sortMode = mode; refreshDialog() }
+          if (mode && mode !== sortMode) {
+            sortMode = mode
+            refreshDialog()
+          }
           return
         }
 
         // reset
         if (e.target.id === 'cc-btn-reset') {
           if (confirm('Reset all capture data?')) {
-            captures = {}; seenGuids = new Set(); totalCount = 0
-            selectedAgent = null; filterQuery = ''
+            captures = {}
+            seenGuids = new Set()
+            totalCount = 0
+            selectedAgent = null
+            filterQuery = ''
             teamFilters = new Set(['ENL', 'RES', 'MAC'])
-            saveData(); refreshDialog()
+            saveData()
+            refreshDialog()
           }
           return
         }
 
         // close detail
         if (e.target.id === 'cc-detail-close') {
-          selectedAgent = null; refreshDialog(); return
+          selectedAgent = null
+          refreshDialog()
+          return
         }
 
         // agent name → show detail
@@ -438,16 +486,17 @@
           const row = agentEl.closest('tr[data-agent]')
           if (!row) return
           const name = row.getAttribute('data-agent')
-          selectedAgent = (selectedAgent === name) ? null : name
-          refreshDialog(); return
+          selectedAgent = selectedAgent === name ? null : name
+          refreshDialog()
+          return
         }
 
         // portal link → pan + highlight
         const pl = e.target.closest('.cc-portal-link')
         if (pl) {
           e.preventDefault()
-          const lat  = parseFloat(pl.dataset.lat)
-          const lng  = parseFloat(pl.dataset.lng)
+          const lat = parseFloat(pl.dataset.lat)
+          const lng = parseFloat(pl.dataset.lng)
           const guid = pl.dataset.guid
           const name = pl.dataset.name || ''
 
@@ -455,7 +504,10 @@
             window.map.setView([lat, lng], Math.max(window.map.getZoom(), 15))
 
             // Cancel any existing poller before starting a new one (#9)
-            if (pollerRef) { clearInterval(pollerRef); pollerRef = null }
+            if (pollerRef) {
+              clearInterval(pollerRef)
+              pollerRef = null
+            }
 
             if (guid && window.portals && window.portals[guid]) {
               window.selectPortal(guid)
@@ -463,13 +515,19 @@
               let attempts = 0
               pollerRef = setInterval(function () {
                 // Abort if dialog has been closed (#9)
-                if (!dialogRef) { clearInterval(pollerRef); pollerRef = null; return }
+                if (!dialogRef) {
+                  clearInterval(pollerRef)
+                  pollerRef = null
+                  return
+                }
                 attempts++
                 if (window.portals && window.portals[guid]) {
                   window.selectPortal(guid)
-                  clearInterval(pollerRef); pollerRef = null
+                  clearInterval(pollerRef)
+                  pollerRef = null
                 } else if (attempts >= 10) {
-                  clearInterval(pollerRef); pollerRef = null
+                  clearInterval(pollerRef)
+                  pollerRef = null
                 }
               }, 500)
             }
@@ -482,10 +540,13 @@
       })
     }
 
-    function refreshDialog () {
+    function refreshDialog() {
       // Debounce flash clear — cancel previous timer so bursts don't cut each
       // other's animation short (#7)
-      if (flashTimer) { clearTimeout(flashTimer); flashTimer = null }
+      if (flashTimer) {
+        clearTimeout(flashTimer)
+        flashTimer = null
+      }
 
       const sw = document.getElementById('cc-summary-wrap')
       if (sw) sw.innerHTML = buildSummary()
@@ -502,7 +563,8 @@
       if (dw) dw.innerHTML = buildDetailPanel(selectedAgent)
 
       const countEl = document.querySelector('#capture-counter-dialog .cc-count')
-      if (countEl) countEl.textContent = `${Object.keys(captures).length} agents · ${totalCount} caps`
+      if (countEl)
+        countEl.textContent = `${Object.keys(captures).length} agents · ${totalCount} caps`
 
       const statusEl = document.getElementById('capture-counter-status')
       if (statusEl) statusEl.textContent = 'Updated ' + new Date().toLocaleTimeString()
@@ -524,7 +586,7 @@
      */
     const CAPTURE_REGEX = /\bcaptured\b/i
 
-    function processPlexts (data) {
+    function processPlexts(data) {
       const result = data && data.result
       if (!Array.isArray(result)) return
 
@@ -541,33 +603,37 @@
         // We use a tentative approach: add to seenGuids now, remove if invalid.
         if (guid) {
           if (seenGuids.has(guid)) return
-          seenGuids.add(guid)   // claim slot — will be left claimed even if entry
-        }                       // turns out invalid (avoids double-processing)
+          seenGuids.add(guid) // claim slot — will be left claimed even if entry
+        } // turns out invalid (avoids double-processing)
 
         const obj = entry[2]
         if (!obj || !obj.plext) return
-        const plext  = obj.plext
+        const plext = obj.plext
         const markup = plext.markup
         if (!Array.isArray(markup)) return
         if (plext.plextType && plext.plextType !== 'SYSTEM_BROADCAST') return
 
-        const hasCapture = markup.some(s => s[0] === 'TEXT' && s[1] && CAPTURE_REGEX.test(s[1].plain))
+        const hasCapture = markup.some(
+          (s) => s[0] === 'TEXT' && s[1] && CAPTURE_REGEX.test(s[1].plain)
+        )
         if (!hasCapture) return
 
-        const playerSeg = markup.find(s => s[0] === 'PLAYER')
+        const playerSeg = markup.find((s) => s[0] === 'PLAYER')
         if (!playerSeg || !playerSeg[1]) return
-        const portalSeg = markup.find(s => s[0] === 'PORTAL')
+        const portalSeg = markup.find((s) => s[0] === 'PORTAL')
 
         const agentName = playerSeg[1].plain
-        const team      = playerSeg[1].team || 'unknown'
+        const team = playerSeg[1].team || 'unknown'
         if (!agentName) return
 
         // Portal info
-        let portalName = null, portalGuid = null, portalLatLng = null
+        let portalName = null,
+          portalGuid = null,
+          portalLatLng = null
         if (portalSeg && portalSeg[1]) {
           const p = portalSeg[1]
           portalName = p.plain || p.name || null
-          portalGuid = p.guid  || null
+          portalGuid = p.guid || null
           if (p.latE6 != null && p.lngE6 != null)
             portalLatLng = { lat: p.latE6 / 1e6, lng: p.lngE6 / 1e6 }
         }
@@ -578,14 +644,20 @@
           captures[agentName] = {
             count: 0,
             team,
-            firstPortal: null, firstPortalGuid: null, firstPortalLatLng: null, firstTs: null,
-            lastPortal:  null, lastPortalGuid:  null, lastPortalLatLng:  null, lastTs:  null
+            firstPortal: null,
+            firstPortalGuid: null,
+            firstPortalLatLng: null,
+            firstTs: null,
+            lastPortal: null,
+            lastPortalGuid: null,
+            lastPortalLatLng: null,
+            lastTs: null
           }
         }
 
         const cur = captures[agentName]
         cur.count++
-        totalCount++   // maintain running total (#13)
+        totalCount++ // maintain running total (#13)
 
         // Only update team if we got a real value — protects against malformed
         // plexts overwriting a known faction with 'unknown' (#8)
@@ -593,12 +665,16 @@
 
         if (portalName) {
           if (cur.firstTs === null || ts <= cur.firstTs) {
-            cur.firstPortal = portalName; cur.firstPortalGuid = portalGuid
-            cur.firstPortalLatLng = portalLatLng; cur.firstTs = ts
+            cur.firstPortal = portalName
+            cur.firstPortalGuid = portalGuid
+            cur.firstPortalLatLng = portalLatLng
+            cur.firstTs = ts
           }
           if (cur.lastTs === null || ts >= cur.lastTs) {
-            cur.lastPortal = portalName; cur.lastPortalGuid = portalGuid
-            cur.lastPortalLatLng = portalLatLng; cur.lastTs = ts
+            cur.lastPortal = portalName
+            cur.lastPortalGuid = portalGuid
+            cur.lastPortalLatLng = portalLatLng
+            cur.lastTs = ts
           }
         }
 
@@ -611,13 +687,17 @@
         changed = true
       })
 
-      if (changed) { saveData(); refreshDialog() }
+      if (changed) {
+        saveData()
+        refreshDialog()
+      }
     }
 
     // ── IITC setup ─────────────────────────────────────────────────────────────
-    function setup () {
-      loadData(); addCSS()
-      window.addHook('publicChatDataAvailable',  processPlexts)
+    function setup() {
+      loadData()
+      addCSS()
+      window.addHook('publicChatDataAvailable', processPlexts)
       window.addHook('factionChatDataAvailable', processPlexts)
       window.IITC.toolbox.addButton({
         label: '📡 Captures',
@@ -635,7 +715,7 @@
   if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) {
     plugin_info.script = {
       version: GM_info.script.version,
-      name:    GM_info.script.name,
+      name: GM_info.script.name,
       description: GM_info.script.description
     }
   }
