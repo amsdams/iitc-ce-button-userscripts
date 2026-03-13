@@ -5,6 +5,7 @@
   "main": "plugins/iitc-plugin-capture-counter.user.js",
   "scripts": {
     "lint": "eslint 'plugins/**/*.user.js'",
+    "lint:fix": "eslint 'plugins/**/*.user.js' --fix",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

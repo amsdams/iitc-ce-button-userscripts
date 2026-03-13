@@ -21,11 +21,12 @@ To maintain a consistent coding style and catch bugs early, this project uses **
 
 ### Available Commands
 - **Check for bugs (Lint):** Run `npm run lint` to find potential logic errors or unused variables.
-- **Auto-format code:** Run `npm run format` to automatically clean up indentation and style across all files.
+- **Auto-fix code issues:** Run `npm run lint:fix` to automatically resolve stylistic and simple code issues identified by ESLint.
+- **Auto-format layout:** Run `npm run format` to automatically clean up indentation and style across all files.
 
 ### Editor Integration
 - **EditorConfig:** Most editors will automatically respect the `.editorconfig` file (2-space indentation, LF line endings).
-- **ESLint & Prettier:** For the best experience, install the ESLint and Prettier extensions in your editor (like VS Code or IntelliJ) and enable "Format on Save".
+- **ESLint & Prettier:** For the best experience, install the ESLint and Prettier extensions in your editor (like VS Code or IntelliJ) and enable "Format on Save" and "Fix on Save".
 
 ## Featured Plugins
 

@@ -5,6 +5,8 @@
 // @description  Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.
 // @author       IITC Community
 // @match        https://intel.ingress.com/*
+// @updateURL    https://github.com/amsdams/iitc-ce-button-userscripts/raw/main/plugins/iitc-plugin-capture-counter.user.js
+// @downloadURL  https://github.com/amsdams/iitc-ce-button-userscripts/raw/main/plugins/iitc-plugin-capture-counter.user.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -12,7 +14,7 @@
 ;(function () {
   'use strict'
 
-  function wrapper(plugin_info) {
+  function wrapper(_plugin_info) {
     if (typeof window.plugin !== 'function') window.plugin = function () {}
 
     // ── State ──────────────────────────────────────────────────────────────────
@@ -43,7 +45,7 @@
             seenGuids = new Set(Array.from(seenGuids).slice(-SEEN_GUIDS_CAP))
           }
           localStorage.setItem(SEEN_GUIDS_KEY, JSON.stringify(Array.from(seenGuids)))
-        } catch (e) {}
+        } catch (_e) {}
       }, 500)
     }
 
@@ -51,13 +53,13 @@
       try {
         const r = localStorage.getItem(STORAGE_KEY)
         if (r) captures = JSON.parse(r)
-      } catch (e) {
+      } catch (_e) {
         captures = {}
       }
       try {
         const r = localStorage.getItem(SEEN_GUIDS_KEY)
         if (r) seenGuids = new Set(JSON.parse(r))
-      } catch (e) {
+      } catch (_e) {
         seenGuids = new Set()
       }
       rebuildTotal()
