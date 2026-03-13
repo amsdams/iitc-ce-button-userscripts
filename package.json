@@ -1,0 +1,25 @@
+{
+  "name": "iitc-ce-button-userscripts",
+  "version": "1.0.0",
+  "description": "A collection of custom plugins designed for use with the **IITC Button** browser plugin.",
+  "main": "iitc-plugin-capture-counter.user.js",
+  "scripts": {
+    "format": "prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amsdams/iitc-ce-button-userscripts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/amsdams/iitc-ce-button-userscripts/issues"
+  },
+  "homepage": "https://github.com/amsdams/iitc-ce-button-userscripts#readme",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}
