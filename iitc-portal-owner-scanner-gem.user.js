@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          IITC Plugin: Portal Owner Scanner
 // @category      Highlighter
-// @version       2.2.0
+// @version       2.3.0
 // @description   Caches portal ownership as you browse the map, then lets you search all seen portals by agent name.
 // @author        Claude
 // @match         https://intel.ingress.com/*
@@ -100,6 +100,21 @@
     }
     #pos-cache-clear:hover { background: #400; color: #f88; border-color: #f44; }
 
+    #pos-zoom-bar {
+      background: #111;
+      padding: 5px 10px;
+      border-bottom: 1px solid #333;
+      font-size: 10px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #pos-zoom-level { color: #fff; font-weight: bold; min-width: 18px; }
+    #pos-zoom-status { font-size: 10px; }
+    #pos-zoom-status.ok  { color: #03fe03; }
+    #pos-zoom-status.low { color: #ff9900; }
+
     #pos-search-row {
       display: flex; gap: 5px; padding: 8px;
       border-bottom: 1px solid #333;
@@ -192,6 +207,10 @@
         <span>Portals cached: <span id="pos-cache-count">0</span></span>
         <button id="pos-cache-clear">Clear cache</button>
       </div>
+      <div id="pos-zoom-bar">
+        Zoom: <span id="pos-zoom-level">?</span>
+        <span id="pos-zoom-status"></span>
+      </div>
       <div id="pos-search-row">
         <input id="pos-input" type="text" placeholder="Agent name…" autocomplete="off" spellcheck="false" />
         <button id="pos-go-btn">SCAN</button>
@@ -241,6 +260,22 @@
   function updateCacheCount() {
     const el = document.getElementById('pos-cache-count');
     if (el) el.textContent = Object.keys(self.cache).length;
+  }
+
+  function updateZoomUI() {
+    const zoom   = window.map ? window.map.getZoom() : null;
+    const zoomEl = document.getElementById('pos-zoom-level');
+    const statEl = document.getElementById('pos-zoom-status');
+    if (!zoomEl || !statEl) return;
+    if (zoom === null) { zoomEl.textContent = '?'; return; }
+    zoomEl.textContent = zoom;
+    if (zoom >= 15) {
+      statEl.textContent = '✔ owner data available';
+      statEl.className   = 'ok';
+    } else {
+      statEl.textContent = '✘ zoom in to 15+ to collect';
+      statEl.className   = 'low';
+    }
   }
 
   // ─── Scan the cache ───────────────────────────────────────────────────────
@@ -422,6 +457,10 @@
 
   // ─── Hook IITC events ─────────────────────────────────────────────────────
   function hookEvents() {
+    // Update zoom indicator whenever the map zoom changes
+    window.map.on('zoomend', updateZoomUI);
+    updateZoomUI();
+
     // portalAdded fires for every portal as tile data loads while panning/zooming.
     // At zoom 15+ the tile data includes resonators and owner info.
     window.addHook('portalAdded', function (data) {
