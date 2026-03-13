@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         IITC Plugin: Capture Counter
 // @namespace    https://iitc.app/plugins/capture-counter
-// @version      1.2.0
+// @version      1.2.1
 // @description  Tracks portal captures from comms (getPlexts) and shows a leaderboard table sorted by capture count. Click an agent to see their first and last captured portal.
 // @author       IITC Community
 // @match        https://intel.ingress.com/*
@@ -466,18 +466,21 @@
         captures[agentName].count++
         captures[agentName].team = team
         if (lastPortal) {
-          // First capture ever seen for this agent
-          if (!captures[agentName].firstPortal) {
-            captures[agentName].firstPortal = lastPortal
-            captures[agentName].firstPortalGuid = lastPortalGuid
-            captures[agentName].firstPortalLatLng = lastPortalLatLng
-            captures[agentName].firstTs = ts
+          const cur = captures[agentName]
+          // Earliest timestamp wins "first"
+          if (!cur.firstTs || ts <= cur.firstTs) {
+            cur.firstPortal = lastPortal
+            cur.firstPortalGuid = lastPortalGuid
+            cur.firstPortalLatLng = lastPortalLatLng
+            cur.firstTs = ts
           }
-          // Always update last
-          captures[agentName].lastPortal = lastPortal
-          captures[agentName].lastPortalGuid = lastPortalGuid
-          captures[agentName].lastPortalLatLng = lastPortalLatLng
-          captures[agentName].lastTs = ts
+          // Latest timestamp wins "last"
+          if (!cur.lastTs || ts >= cur.lastTs) {
+            cur.lastPortal = lastPortal
+            cur.lastPortalGuid = lastPortalGuid
+            cur.lastPortalLatLng = lastPortalLatLng
+            cur.lastTs = ts
+          }
         }
         changed = true
       })
