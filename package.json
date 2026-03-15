@@ -1,5 +1,4 @@
 {
-  "name": "iitc-ce-button-userscripts",
   "version": "1.0.0",
   "description": "A collection of custom plugins designed for use with the **IITC Button** browser plugin.",
   "main": "plugins/iitc-plugin-capture-counter.user.js",
@@ -9,6 +8,7 @@
     "lint": "eslint 'src/**/*.ts' 'plugins/**/*.user.js'",
     "lint:fix": "eslint 'src/**/*.ts' 'plugins/**/*.user.js' --fix",
     "format": "prettier --write .",
+    "version": "node scripts/sync-version.mjs && git add src/**/header.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

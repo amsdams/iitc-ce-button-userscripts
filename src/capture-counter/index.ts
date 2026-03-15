@@ -1,44 +1,11 @@
 import header from './header.json';
 
-interface PortalLatLng {
-  lat: number;
-  lng: number;
-}
-
-interface AgentCaptureInfo {
-  count: number;
-  team: string;
-  firstPortal: string | null;
-  firstPortalGuid: string | null;
-  firstPortalLatLng: PortalLatLng | null;
-  firstTs: number | null;
-  lastPortal: string | null;
-  lastPortalGuid: string | null;
-  lastPortalLatLng: PortalLatLng | null;
-  lastTs: number | null;
-}
-
-interface Captures {
-  [agentName: string]: AgentCaptureInfo;
-}
-
-interface PluginInfo {
-  script: {
-    version: string;
-    name: string;
-    description: string;
-  };
-}
-
 export {};
 
 // ── IITC / External Globals ──────────────────────────────────────────────────
 declare global {
   interface Window {
-    plugin: {
-      captureCounter?: any;
-      [key: string]: any;
-    };
+    plugin: any;
     IITC: any;
     addHook: any;
     iitcLoaded: any;
@@ -47,31 +14,26 @@ declare global {
     portals: any;
     selectPortal: any;
     dialog: any;
-    GM_info: any;
+    bootPlugins: any[];
   }
 }
-declare const L: any;
 
-function wrapper(_plugin_info?: PluginInfo) {
-  if (typeof window.plugin !== 'function') (window as any).plugin = function () {};
-  if (!window.plugin.captureCounter) window.plugin.captureCounter = {};
-  const self = window.plugin.captureCounter;
-
+function wrapper(_plugin_info: any) {
   // ── State ──────────────────────────────────────────────────────────────────
   const STORAGE_KEY = 'iitc-capture-counter';
   const SEEN_GUIDS_KEY = 'iitc-capture-counter-guids';
   const SEEN_GUIDS_CAP = 20000;
 
-  let captures: Captures = {};
+  let captures: any = {};
   let seenGuids: Set<string> = new Set();
   let totalCount = 0;
 
   function rebuildTotal() {
-    totalCount = Object.values(captures).reduce((s, v) => s + v.count, 0);
+    totalCount = Object.values(captures).reduce<number>((s: any, v: any) => s + v.count, 0) as number;
   }
 
   // ── Persistence ────────────────────────────────────────────────────────────
-  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let saveTimer: any = null;
   function saveData() {
     if (saveTimer) return;
     saveTimer = setTimeout(function () {
@@ -159,7 +121,7 @@ function wrapper(_plugin_info?: PluginInfo) {
       #cc-agent-detail .cc-close { float: right; cursor: pointer; color: #555; font-size: 13px; line-height: 1; margin-left: 4px; }
       #cc-agent-detail .cc-close:hover { color: #aaa; }
     `;
-    document.head.appendChild(style);
+    (document.head || document.getElementsByTagName('head')[0]).appendChild(style);
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -185,7 +147,7 @@ function wrapper(_plugin_info?: PluginInfo) {
     );
   }
 
-  function portalLinkHtml(portalName: string | null, portalGuid: string | null, portalLatLng: PortalLatLng | null) {
+  function portalLinkHtml(portalName: string | null, portalGuid: string | null, portalLatLng: any | null) {
     if (!portalName) return '<span style="color:#444">—</span>';
     if (portalLatLng && portalLatLng.lat != null) {
       const { lat, lng } = portalLatLng;
@@ -208,14 +170,14 @@ function wrapper(_plugin_info?: PluginInfo) {
   let filterQuery = '';
   let teamFilters: Set<string> = new Set(['ENL', 'RES', 'MAC']);
   let flashAgents: Set<string> = new Set();
-  let flashTimer: ReturnType<typeof setTimeout> | null = null;
+  let flashTimer: any = null;
   let visitedPortals: Set<string> = new Set();
-  let pollerRef: ReturnType<typeof setInterval> | null = null;
+  let pollerRef: any = null;
 
   // ── Build UI ───────────────────────────────────────────────────────────────
   function buildSummary() {
     const t: { [key: string]: number } = { ENL: 0, RES: 0, MAC: 0 };
-    Object.values(captures).forEach(function (info) {
+    Object.values(captures).forEach(function (info: any) {
       const tc = teamClass(info.team);
       if (tc) t[tc] += info.count;
     });
@@ -245,7 +207,7 @@ function wrapper(_plugin_info?: PluginInfo) {
   }
 
   function buildTable() {
-    let entries = Object.entries(captures).map(function ([name, info]) {
+    let entries = Object.entries(captures).map(function ([name, info]: [string, any]) {
       return { name, tc: teamClass(info.team), count: info.count, lastTs: info.lastTs || 0 };
     });
 
@@ -350,7 +312,7 @@ function wrapper(_plugin_info?: PluginInfo) {
       `<div id="capture-counter-status">Listening for comms…</div>` +
       `</div>`;
 
-    dialogRef = window.dialog({
+    dialogRef = (window as any).dialog({
       title: `📡 Capture Counter${version}`,
       html,
       id: 'capture-counter',
@@ -365,7 +327,6 @@ function wrapper(_plugin_info?: PluginInfo) {
 
     bindDialogEvents();
   }
-  self.openDialog = openDialog;
 
   function bindDialogEvents() {
     const dialog = document.getElementById('capture-counter-dialog');
@@ -455,14 +416,14 @@ function wrapper(_plugin_info?: PluginInfo) {
         const name = pl.dataset.name || '';
 
         if (!isNaN(lat) && !isNaN(lng)) {
-          window.map.setView([lat, lng], Math.max(window.map.getZoom(), 15));
+          (window as any).map.setView([lat, lng], Math.max((window as any).map.getZoom(), 15));
           if (pollerRef) {
             clearInterval(pollerRef);
             pollerRef = null;
           }
 
-          if (guid && window.portals && window.portals[guid]) {
-            window.selectPortal(guid);
+          if (guid && (window as any).portals && (window as any).portals[guid]) {
+            (window as any).selectPortal(guid);
           } else if (guid) {
             let attempts = 0;
             pollerRef = setInterval(function () {
@@ -472,8 +433,8 @@ function wrapper(_plugin_info?: PluginInfo) {
                 return;
               }
               attempts++;
-              if (window.portals && window.portals[guid]) {
-                window.selectPortal(guid);
+              if ((window as any).portals && (window as any).portals[guid]) {
+                (window as any).selectPortal(guid);
                 clearInterval(pollerRef!);
                 pollerRef = null;
               } else if (attempts >= 10) {
@@ -547,12 +508,12 @@ function wrapper(_plugin_info?: PluginInfo) {
       if (!Array.isArray(markup)) return;
       if (plext.plextType && plext.plextType !== 'SYSTEM_BROADCAST') return;
 
-      const hasCapture = markup.some((s) => s[0] === 'TEXT' && s[1] && CAPTURE_REGEX.test(s[1].plain));
+      const hasCapture = markup.some((s: any) => s[0] === 'TEXT' && s[1] && CAPTURE_REGEX.test(s[1].plain));
       if (!hasCapture) return;
 
-      const playerSeg = markup.find((s) => s[0] === 'PLAYER');
+      const playerSeg = markup.find((s: any) => s[0] === 'PLAYER');
       if (!playerSeg || !playerSeg[1]) return;
-      const portalSeg = markup.find((s) => s[0] === 'PORTAL');
+      const portalSeg = markup.find((s: any) => s[0] === 'PORTAL');
 
       const agentName = playerSeg[1].plain;
       const team = playerSeg[1].team || 'unknown';
@@ -620,32 +581,38 @@ function wrapper(_plugin_info?: PluginInfo) {
     }
   }
 
-  function setup() {
+  const setup = function() {
     loadData();
     addCSS();
-    window.addHook('publicChatDataAvailable', processPlexts);
-    window.addHook('factionChatDataAvailable', processPlexts);
+    (window as any).addHook('publicChatDataAvailable', processPlexts);
+    (window as any).addHook('factionChatDataAvailable', processPlexts);
 
-    if (window.IITC && window.IITC.toolbox && typeof window.IITC.toolbox.addButton === 'function') {
-      window.IITC.toolbox.addButton({
+    const _window = window as any;
+    if (_window.IITC && _window.IITC.toolbox && typeof _window.IITC.toolbox.addButton === 'function') {
+      _window.IITC.toolbox.addButton({
         label: '📡 Captures',
         title: 'Show portal capture leaderboard',
         action: openDialog
       });
     } else {
-      window.$('#toolbox').append(
+      _window.$('#toolbox').append(
         '<a onclick="window.plugin.captureCounter.openDialog();return false;" title="Show portal capture leaderboard">📡 Captures</a>'
       );
     }
-    console.log('[Capture Counter] Plugin TS loaded.');
-  }
+    console.log('[Capture Counter] Plugin loaded.');
+  };
 
-  if (window.iitcLoaded) setup();
-  else window.addHook('iitcLoaded', setup);
+  const _window = window as any;
+  if (!_window.plugin) _window.plugin = function() {};
+  if (!_window.plugin.captureCounter) _window.plugin.captureCounter = {};
+  _window.plugin.captureCounter.openDialog = openDialog;
+
+  (setup as any).info = _plugin_info;
+  if (!_window.bootPlugins) _window.bootPlugins = [];
+  _window.bootPlugins.push(setup);
+  if (_window.iitcLoaded && typeof setup === 'function') setup();
 }
 
-// Inject the wrapper
-const script = document.createElement('script');
 const info = {
   script: {
     version: header.version,
@@ -653,5 +620,8 @@ const info = {
     description: header.description
   }
 };
+
+// Use standard IITC injection pattern
+const script = document.createElement('script');
 script.appendChild(document.createTextNode('(' + wrapper + ')(' + JSON.stringify(info) + ');'));
-(document.body || document.head || document.documentElement).appendChild(script);
+(document.head || document.body || document.documentElement).appendChild(script);

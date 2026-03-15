@@ -22,11 +22,6 @@
   	description: description};
 
   function wrapper(_plugin_info) {
-      if (typeof window.plugin !== 'function')
-          window.plugin = function () { };
-      if (!window.plugin.captureCounter)
-          window.plugin.captureCounter = {};
-      const self = window.plugin.captureCounter;
       // ── State ──────────────────────────────────────────────────────────────────
       const STORAGE_KEY = 'iitc-capture-counter';
       const SEEN_GUIDS_KEY = 'iitc-capture-counter-guids';
@@ -130,7 +125,7 @@
       #cc-agent-detail .cc-close { float: right; cursor: pointer; color: #555; font-size: 13px; line-height: 1; margin-left: 4px; }
       #cc-agent-detail .cc-close:hover { color: #aaa; }
     `;
-          document.head.appendChild(style);
+          (document.head || document.getElementsByTagName('head')[0]).appendChild(style);
       }
       // ── Helpers ────────────────────────────────────────────────────────────────
       function escapeHtml(s) {
@@ -309,7 +304,6 @@
           });
           bindDialogEvents();
       }
-      self.openDialog = openDialog;
       function bindDialogEvents() {
           const dialog = document.getElementById('capture-counter-dialog');
           if (!dialog)
@@ -554,30 +548,37 @@
               refreshDialog();
           }
       }
-      function setup() {
+      const setup = function () {
           loadData();
           addCSS();
           window.addHook('publicChatDataAvailable', processPlexts);
           window.addHook('factionChatDataAvailable', processPlexts);
-          if (window.IITC && window.IITC.toolbox && typeof window.IITC.toolbox.addButton === 'function') {
-              window.IITC.toolbox.addButton({
+          const _window = window;
+          if (_window.IITC && _window.IITC.toolbox && typeof _window.IITC.toolbox.addButton === 'function') {
+              _window.IITC.toolbox.addButton({
                   label: '📡 Captures',
                   title: 'Show portal capture leaderboard',
                   action: openDialog
               });
           }
           else {
-              window.$('#toolbox').append('<a onclick="window.plugin.captureCounter.openDialog();return false;" title="Show portal capture leaderboard">📡 Captures</a>');
+              _window.$('#toolbox').append('<a onclick="window.plugin.captureCounter.openDialog();return false;" title="Show portal capture leaderboard">📡 Captures</a>');
           }
-          console.log('[Capture Counter] Plugin TS loaded.');
-      }
-      if (window.iitcLoaded)
+          console.log('[Capture Counter] Plugin loaded.');
+      };
+      const _window = window;
+      if (!_window.plugin)
+          _window.plugin = function () { };
+      if (!_window.plugin.captureCounter)
+          _window.plugin.captureCounter = {};
+      _window.plugin.captureCounter.openDialog = openDialog;
+      setup.info = _plugin_info;
+      if (!_window.bootPlugins)
+          _window.bootPlugins = [];
+      _window.bootPlugins.push(setup);
+      if (_window.iitcLoaded && typeof setup === 'function')
           setup();
-      else
-          window.addHook('iitcLoaded', setup);
   }
-  // Inject the wrapper
-  const script = document.createElement('script');
   const info = {
       script: {
           version: header.version,
@@ -585,7 +586,9 @@
           description: header.description
       }
   };
+  // Use standard IITC injection pattern
+  const script = document.createElement('script');
   script.appendChild(document.createTextNode('(' + wrapper + ')(' + JSON.stringify(info) + ');'));
-  (document.body || document.head || document.documentElement).appendChild(script);
+  (document.head || document.body || document.documentElement).appendChild(script);
 
 })();
