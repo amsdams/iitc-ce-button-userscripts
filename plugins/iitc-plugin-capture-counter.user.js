@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        IITC Plugin: Capture Counter
+// @name        IITC Plugin: Capture Counter v1.6.0
 // @description Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.
 // @namespace   https://iitc.app/plugins/capture-counter
 // @version     1.6.0
@@ -13,7 +13,7 @@
 (function () {
   'use strict';
 
-  var name = "IITC Plugin: Capture Counter";
+  var name = "IITC Plugin: Capture Counter v1.6.0";
   var version = "1.6.0";
   var description = "Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.";
   var header = {
@@ -24,6 +24,9 @@
   function wrapper(_plugin_info) {
       if (typeof window.plugin !== 'function')
           window.plugin = function () { };
+      if (!window.plugin.captureCounter)
+          window.plugin.captureCounter = {};
+      const self = window.plugin.captureCounter;
       // ── State ──────────────────────────────────────────────────────────────────
       const STORAGE_KEY = 'iitc-capture-counter';
       const SEEN_GUIDS_KEY = 'iitc-capture-counter-guids';
@@ -306,6 +309,7 @@
           });
           bindDialogEvents();
       }
+      self.openDialog = openDialog;
       function bindDialogEvents() {
           const dialog = document.getElementById('capture-counter-dialog');
           if (!dialog)
@@ -563,17 +567,7 @@
               });
           }
           else {
-              const toolbox = document.getElementById('toolbox');
-              if (toolbox) {
-                  const a = document.createElement('a');
-                  a.textContent = '📡 Captures';
-                  a.title = 'Show portal capture leaderboard';
-                  a.addEventListener('click', (e) => {
-                      e.preventDefault();
-                      openDialog();
-                  });
-                  toolbox.appendChild(a);
-              }
+              window.$('#toolbox').append('<a onclick="window.plugin.captureCounter.openDialog();return false;" title="Show portal capture leaderboard">📡 Captures</a>');
           }
           console.log('[Capture Counter] Plugin TS loaded.');
       }

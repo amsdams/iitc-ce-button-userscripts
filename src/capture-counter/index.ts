@@ -35,11 +35,15 @@ export {};
 // ── IITC / External Globals ──────────────────────────────────────────────────
 declare global {
   interface Window {
-    plugin: any;
+    plugin: {
+      captureCounter?: any;
+      [key: string]: any;
+    };
     IITC: any;
     addHook: any;
     iitcLoaded: any;
     map: any;
+    $: any;
     portals: any;
     selectPortal: any;
     dialog: any;
@@ -49,7 +53,9 @@ declare global {
 declare const L: any;
 
 function wrapper(_plugin_info?: PluginInfo) {
-  if (typeof window.plugin !== 'function') window.plugin = function () {};
+  if (typeof window.plugin !== 'function') (window as any).plugin = function () {};
+  if (!window.plugin.captureCounter) window.plugin.captureCounter = {};
+  const self = window.plugin.captureCounter;
 
   // ── State ──────────────────────────────────────────────────────────────────
   const STORAGE_KEY = 'iitc-capture-counter';
@@ -359,6 +365,7 @@ function wrapper(_plugin_info?: PluginInfo) {
 
     bindDialogEvents();
   }
+  self.openDialog = openDialog;
 
   function bindDialogEvents() {
     const dialog = document.getElementById('capture-counter-dialog');
@@ -626,17 +633,9 @@ function wrapper(_plugin_info?: PluginInfo) {
         action: openDialog
       });
     } else {
-      const toolbox = document.getElementById('toolbox');
-      if (toolbox) {
-        const a = document.createElement('a');
-        a.textContent = '📡 Captures';
-        a.title = 'Show portal capture leaderboard';
-        a.addEventListener('click', (e) => {
-          e.preventDefault();
-          openDialog();
-        });
-        toolbox.appendChild(a);
-      }
+      window.$('#toolbox').append(
+        '<a onclick="window.plugin.captureCounter.openDialog();return false;" title="Show portal capture leaderboard">📡 Captures</a>'
+      );
     }
     console.log('[Capture Counter] Plugin TS loaded.');
   }
