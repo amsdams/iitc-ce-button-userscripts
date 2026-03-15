@@ -555,11 +555,26 @@
           addCSS();
           window.addHook('publicChatDataAvailable', processPlexts);
           window.addHook('factionChatDataAvailable', processPlexts);
-          window.IITC.toolbox.addButton({
-              label: '📡 Captures',
-              title: 'Show portal capture leaderboard',
-              action: openDialog
-          });
+          if (window.IITC && window.IITC.toolbox && typeof window.IITC.toolbox.addButton === 'function') {
+              window.IITC.toolbox.addButton({
+                  label: '📡 Captures',
+                  title: 'Show portal capture leaderboard',
+                  action: openDialog
+              });
+          }
+          else {
+              const toolbox = document.getElementById('toolbox');
+              if (toolbox) {
+                  const a = document.createElement('a');
+                  a.textContent = '📡 Captures';
+                  a.title = 'Show portal capture leaderboard';
+                  a.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      openDialog();
+                  });
+                  toolbox.appendChild(a);
+              }
+          }
           console.log('[Capture Counter] Plugin TS loaded.');
       }
       if (window.iitcLoaded)
