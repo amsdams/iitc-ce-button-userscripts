@@ -1,0 +1,9 @@
+{
+  "name": "IITC Plugin: Invite Agent v1.6.3",
+  "namespace": "https://iitc.app/plugins/invite-agent",
+  "version": "1.6.3",
+  "description": "Pre-populate chat with a custom invitation message when clicking an agent name.",
+  "author": "IITC Community",
+  "match": "https://intel.ingress.com/*",
+  "grant": "none"
+}
