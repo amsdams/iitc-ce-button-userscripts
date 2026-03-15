@@ -4,8 +4,10 @@
   "description": "A collection of custom plugins designed for use with the **IITC Button** browser plugin.",
   "main": "plugins/iitc-plugin-capture-counter.user.js",
   "scripts": {
-    "lint": "eslint 'plugins/**/*.user.js'",
-    "lint:fix": "eslint 'plugins/**/*.user.js' --fix",
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "lint": "eslint 'src/**/*.ts' 'plugins/**/*.user.js'",
+    "lint:fix": "eslint 'src/**/*.ts' 'plugins/**/*.user.js' --fix",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,8 +24,18 @@
   },
   "homepage": "https://github.com/amsdams/iitc-ce-button-userscripts#readme",
   "devDependencies": {
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/jquery": "^4.0.0",
+    "@types/leaflet": "^1.9.21",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
     "eslint": "^9.39.4",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "rollup": "^4.59.0",
+    "rollup-plugin-userscript-metablock": "^0.4.3",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
   }
 }
