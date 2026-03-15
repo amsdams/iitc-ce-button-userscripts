@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name        IITC Plugin: Capture Counter v1.6.1
+// @name        IITC Plugin: Capture Counter v1.6.2
 // @description Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.
 // @namespace   https://iitc.app/plugins/capture-counter
-// @version     1.6.1
+// @version     1.6.2
 // @author      IITC Community
 // @match       https://intel.ingress.com/*
 // @updateURL   https://github.com/amsdams/iitc-ce-button-userscripts/raw/main/plugins/iitc-plugin-capture-counter.user.js
@@ -13,8 +13,8 @@
 (function () {
   'use strict';
 
-  var name = "IITC Plugin: Capture Counter v1.6.1";
-  var version = "1.6.1";
+  var name = "IITC Plugin: Capture Counter v1.6.2";
+  var version = "1.6.2";
   var description = "Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.";
   var header = {
   	name: name,
