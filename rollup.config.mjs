@@ -1,5 +1,6 @@
 import typescript from '@rollup/plugin-typescript';
 import metablock from 'rollup-plugin-userscript-metablock';
+import json from '@rollup/plugin-json';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,6 +22,7 @@ export default pluginFolders.map(folder => ({
     name: `iitc_plugin_${folder.replace(/-/g, '_')}`,
   },
   plugins: [
+    json(),
     typescript(),
     metablock({
       file: `src/${folder}/header.json`,

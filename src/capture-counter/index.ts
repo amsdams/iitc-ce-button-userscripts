@@ -1,4 +1,4 @@
-/* global L, map, dialog */
+import header from './header.json';
 
 interface PortalLatLng {
   lat: number;
@@ -329,6 +329,8 @@ function wrapper(_plugin_info?: PluginInfo) {
       return;
     }
 
+    const version = _plugin_info?.script?.version ? ` v${_plugin_info.script.version}` : '';
+
     const html =
       `<div id="capture-counter-dialog">` +
       `<div class="cc-toolbar">` +
@@ -343,7 +345,7 @@ function wrapper(_plugin_info?: PluginInfo) {
       `</div>`;
 
     dialogRef = window.dialog({
-      title: '📡 Capture Counter',
+      title: `📡 Capture Counter${version}`,
       html,
       id: 'capture-counter',
       closeCallback: function () {
@@ -628,17 +630,14 @@ function wrapper(_plugin_info?: PluginInfo) {
   else window.addHook('iitcLoaded', setup);
 }
 
-// ── Plugin Injection ─────────────────────────────────────────────────────────
-const plugin_info: any = {};
-if (typeof (window as any).GM_info !== 'undefined' && (window as any).GM_info && (window as any).GM_info.script) {
-  plugin_info.script = {
-    version: (window as any).GM_info.script.version,
-    name: (window as any).GM_info.script.name,
-    description: (window as any).GM_info.script.description
-  };
-}
-
 // Inject the wrapper
 const script = document.createElement('script');
-script.appendChild(document.createTextNode('(' + wrapper + ')(' + JSON.stringify(plugin_info) + ');'));
+const info = {
+  script: {
+    version: header.version,
+    name: header.name,
+    description: header.description
+  }
+};
+script.appendChild(document.createTextNode('(' + wrapper + ')(' + JSON.stringify(info) + ');'));
 (document.body || document.head || document.documentElement).appendChild(script);
