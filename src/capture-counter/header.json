@@ -1,7 +1,7 @@
 {
-  "name": "IITC Plugin: Capture Counter v1.0.1",
+  "name": "IITC Plugin: Capture Counter v1.6.1",
   "namespace": "https://iitc.app/plugins/capture-counter",
-  "version": "1.0.1",
+  "version": "1.6.1",
   "description": "Tracks portal captures. Deduplicates by GUID. Summary bar, search/filter, team toggles, sortable table, first/last portal links.",
   "author": "IITC Community",
   "match": "https://intel.ingress.com/*",
