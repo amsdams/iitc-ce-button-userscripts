@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A collection of custom plugins designed for use with the **IITC Button** browser plugin.",
   "main": "plugins/iitc-plugin-capture-counter.user.js",
   "scripts": {
